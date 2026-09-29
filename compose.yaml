@@ -1,0 +1,68 @@
+services:
+  app:
+    build: .
+    ports:
+      - "${APP_PORT:-8080}:80"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: "${APP_URL:-http://localhost:8080}"
+      APP_KEY: "${APP_KEY:?Set APP_KEY in .env}"
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: "${DB_DATABASE:-jeongol_izakaya}"
+      DB_USERNAME: "${DB_USERNAME:-jeongol}"
+      DB_PASSWORD: "${DB_PASSWORD:-secret}"
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      APP_RUN_MIGRATIONS: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "php -r \"exit(@file_get_contents('http://127.0.0.1/') === false ? 1 : 0);\""]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+  queue:
+    build: .
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--max-time=3600"]
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_KEY: "${APP_KEY:?Set APP_KEY in .env}"
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: "${DB_DATABASE:-jeongol_izakaya}"
+      DB_USERNAME: "${DB_USERNAME:-jeongol}"
+      DB_PASSWORD: "${DB_PASSWORD:-secret}"
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      APP_RUN_MIGRATIONS: "false"
+    depends_on:
+      app:
+        condition: service_healthy
+  db:
+    image: mariadb:11.7
+    environment:
+      MARIADB_DATABASE: "${DB_DATABASE:-jeongol_izakaya}"
+      MARIADB_USER: "${DB_USERNAME:-jeongol}"
+      MARIADB_PASSWORD: "${DB_PASSWORD:-secret}"
+      MARIADB_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-root-secret}"
+    ports:
+      - "${DB_PORT_FORWARD:-3306}:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+volumes:
+  db-data:

@@ -7,6 +7,14 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Docker
+
+1. Copy `.env.docker.example` to `.env` and set strong database passwords.
+2. Generate an application key with `docker run --rm php:8.3-cli php -r "echo 'base64:'.base64_encode(random_bytes(32)).PHP_EOL;"`, then paste it as `APP_KEY` in `.env`.
+3. Start the application with `docker compose up --build`.
+
+The app is available at `http://localhost:8080`. MariaDB data persists in the `db-data` Docker volume. The `app` container applies migrations at startup; `queue` processes Laravel database-queue jobs.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
